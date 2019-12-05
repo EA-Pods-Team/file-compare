@@ -1,0 +1,55 @@
+<html>
+    <head>
+<script type="text/javascript">
+String.prototype.hashCode = function() {
+    var hash = 0, i, chr;
+    if (this.length === 0) return hash;
+    for (i = 0; i < this.length; i++) {
+      chr   = this.charCodeAt(i);
+      hash  = ((hash << 5) - hash) + chr;
+      //hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
+function read(){
+    var fileSel = document.querySelector('#fileSel');
+    fileData = [];
+    for (var i = 0; i < fileSel.files.length; i++){
+        console.log(fileSel.files[i])
+
+
+        readFileAt(fileSel,i).then(function(data, file, ind){
+            console.log(file)
+            console.log(ind)
+            console.log(data.hashCode());
+            console.log(data);
+            fileData.unshift({
+                "file": file,
+                hash: data.hashCode()
+            });
+        });
+    }
+    
+}
+
+function readFileAt(fileSel, ind){
+    return new Promise(function(resolve,reject){
+        var reader = new FileReader();
+        reader.onload = function(e){
+            console.log(e)
+            console.log(fileSel.files[ind])
+            resolve(e.target.result, fileSel.files[ind], ind);
+        }
+        reader.readAsBinaryString(fileSel.files[ind])
+    });
+}
+
+</script>
+    </head>
+    <body>
+        <div>
+            <input id='fileSel' type="file" multiple>
+            <button id='diffBtn' onclick='read()'>compare</button>
+        </div>
+    </body>
+</html>

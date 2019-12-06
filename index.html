@@ -190,21 +190,42 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
 
 function read(){
     var fileSel = document.querySelector('#fileSel');
-
-    readFile(fileSel,0).then(function(dict){
-        hash = md5(dict.data);
-        sent = makeSentence(hash);
-        //console.log(hash);
-        //console.log(sent);
-        console.log(dict.file)
-        document.querySelector('#md5').innerText = hash;
-        document.querySelector('#sentence').innerText = sent;
-        document.querySelector('#fname').innerText = dict.file.name;
-        document.querySelector('#lastMod').innerText = new Date(dict.file.lastModified);
-    }).then(function(){
-        fileSel.value = '';
+    //document.querySelector('#signatures').innerHTML = '';
+    var allSigs = document.querySelector('#signatures');
+    (allSigs.querySelectorAll('div.sig')).forEach(function(node){
+        if(node.id != 'signatureTemplate') {
+            allSigs.removeChild(node)
+        }
     });
+    for (var i = 0; i < fileSel.files.length; i++){
+        //
+        readFile(fileSel,i).then(function(dict){
+            hash = md5(dict.data);
+            sentence = makeSentence(hash);
+            //console.log(hash);
+            //console.log(sent);
+            console.log(dict.file)
+            var sigNode = document.querySelector('#signatureTemplate').cloneNode(true);
+            
+            sigNode.removeAttribute('id');
+            sigNode.removeAttribute('style');
 
+            sigNode.querySelector('.md5').innerText = hash;
+            sigNode.querySelector('.sentence').innerText = sentence;
+            sigNode.querySelector('.fname').innerText = dict.file.name;
+            sigNode.querySelector('.lastMod').innerText = new Date(dict.file.lastModified);
+            
+            document.querySelector('#signatures').append(sigNode);
+            return dict.file;
+        }).then(function(file){
+            if(file === fileSel.files[fileSel.files.length-1]){
+                fileSel.value = '';
+            }
+        });
+        
+    }
+    document.querySelector('#signatureTemplate').style.display = 'none';
+    
 }
 
 function readFile(fileSel, ind){
@@ -259,6 +280,42 @@ window.onload = function(){
     verbs = getWords(allwords, 'PastTense')
     adverbs = getWords(allwords, 'Adverb')
     preps = getWords(allwords, "Preposition")
+
+    nothing = function(ev){ev.preventDefault();}
+
+    window.ondrop = function(ev){
+        ev.preventDefault();
+        //console.log('dropped')
+        //console.log(ev)
+        document.querySelector('#fileSel').files = ev.dataTransfer.files;
+        read();
+        window.ondragleave(ev);
+        dragCounter = 0;
+    }
+
+    dragCounter = 0;
+    window.ondragenter = function(ev){
+        ev.preventDefault();
+        //console.log('drag start')
+        dragCounter += 1;
+        document.querySelector('#wrapper').style.backgroundColor = 'lavender';
+    }
+
+    window.ondragleave = function(ev){
+        ev.preventDefault();
+        dragCounter -= 1;
+        if(dragCounter == 0){
+            document.querySelector('#wrapper').style.backgroundColor = '';
+        }
+        
+        //console.log('drag end')
+    }
+
+    window.ondragstart = nothing;
+    window.ondragend = nothing;
+    window.ondragover = nothing;
+   
+
 }
 
 </script>
@@ -266,21 +323,33 @@ window.onload = function(){
 div{
     margin:10px;
 }
-#sentence{
+.sentence{
     font-weight:bold;
 }
+.sig{
+    margin:10px 0px;
+    border:black;
+    border-style:solid
+}
+.signaturesBlock{
+    display:inline-block;
+}
+
+/*#wrapper * {pointer-events: none;}*/
 </style>
 </head>
-    <body>
+    <body id='wrapper'>
         <div>
-            <input id='fileSel' type="file" style="display:none" oninput='read()'>
-            <button id='diffBtn' onclick='document.querySelector("#fileSel").click()'>Identify File</button>
+            <input id='fileSel' type="file" style="display:none" oninput='read()' multiple>
+            <button id='diffBtn' onclick='document.querySelector("#fileSel").click()'>Identify File(s)</button>
         </div>
-        <div id='signatures'>
-            <div>File Name: <span id='fname'></span></div>
-            <div>Last Modified: <span id='lastMod'></span></div>
-            <div>MD5 Hash: <span id='md5'></span></div> 
-            <div>Pseudo-Unique Sentence: <span id='sentence'></span></div>
+        <div id='signatures' class='signaturesBlock'>
+            <div id=signatureTemplate class='sig'>
+                    <div>File Name: <span class='fname'></span></div>
+                    <div>Last Modified: <span class='lastMod'></span></div>
+                    <div>MD5 Hash: <span class='md5'></span></div> 
+                    <div>Pseudo-Unique Sentence: <span class='sentence'></span></div>
+                </div>
         </div>
     </body>
 </html>

@@ -1,4 +1,4 @@
-<html>
+<!DOCTYPE html>
     <head>
 
 <script type="text/javascript">
@@ -188,18 +188,19 @@ if (md5('hello') != '5d41402abc4b2a76b9719d911017c592') {
 
 /* END of imported stuff, beginning of original code (kodama) */
 
-function read(){
-    var fileSel = document.querySelector('#fileSel');
+function read(files){
+    //var fileSel = document.querySelector('#fileSel');
     //document.querySelector('#signatures').innerHTML = '';
     var allSigs = document.querySelector('#signatures');
-    (allSigs.querySelectorAll('div.sig')).forEach(function(node){
+    for (var node of allSigs.querySelectorAll('div.sig')){
         if(node.id != 'signatureTemplate') {
-            allSigs.removeChild(node)
+            allSigs.removeChild(node);
         }
-    });
-    for (var i = 0; i < fileSel.files.length; i++){
+    }
+
+    for (var i = 0; i < files.length; i++){
         //
-        readFile(fileSel,i).then(function(dict){
+        readFile(files,i).then(function(dict){
             hash = md5(dict.data);
             sentence = makeSentence(hash);
             //console.log(hash);
@@ -215,11 +216,11 @@ function read(){
             sigNode.querySelector('.fname').innerText = dict.file.name;
             sigNode.querySelector('.lastMod').innerText = new Date(dict.file.lastModified);
             
-            document.querySelector('#signatures').append(sigNode);
+            document.querySelector('#signatures').appendChild(sigNode);
             return dict.file;
         }).then(function(file){
-            if(file === fileSel.files[fileSel.files.length-1]){
-                fileSel.value = '';
+            if(file === files[files.length-1]){
+                document.querySelector('#fileSel').value = '';
             }
         });
         
@@ -228,34 +229,37 @@ function read(){
     
 }
 
-function readFile(fileSel, ind){
+function readFile(files, ind){
     return new Promise(function(resolve,reject){
         var reader = new FileReader();
         reader.onload = function(e){
             resolve({
                 'data':e.target.result, 
-                'file': fileSel.files[ind]});
+                'file': files[ind]});
         }
-        reader.readAsBinaryString(fileSel.files[ind])
+        reader.readAsBinaryString(files[ind])
     });
 }
 
-getWords = function(words, speech){
+getWords = function(words, speech, negate){
+    if(negate == null){
+        negate = '^$';
+    }
     if(speech.constructor.name != 'RegExp'){
         speech = RegExp(speech);
     }
     return Object.keys(words).filter(function(k){
         var val = words[k];
-        if(Array.isArray(val)){
-            val = val.sort().join(" ");
-            if(val.match(speech)){
-                return true
-            }else{
-                return false
-            }
-        }else{
-            return ! (words[k].match(speech) == null);
+        if(! Array.isArray(val)){
+            val = [val];
         }
+        val = val.sort().join(" ");
+        if(val.match(speech) && val.match(negate) == null ){
+            return true
+        }else{
+            return false
+        }
+        
     });
 }
 Array.prototype.getRand = function(md5seed){
@@ -274,7 +278,8 @@ function makeSentence(seed){
 window.onload = function(){
     //allwords = nlp().world.words;
     allwords = getAllWords();
-    nouns = getWords(allwords, /(?<!Demonym.*)Plural/); //this gets rid of nationalities and ethnicities
+    //this gets rid of nationalities and ethnicities
+    nouns = getWords(allwords, 'Plural','Demonym');
     numbers = getWords(allwords, 'Cardinal')
     adjs = getWords(allwords, 'Adjective')
     names = getWords(allwords,'FirstName')
@@ -288,8 +293,7 @@ window.onload = function(){
         ev.preventDefault();
         //console.log('dropped')
         //console.log(ev)
-        document.querySelector('#fileSel').files = ev.dataTransfer.files;
-        read();
+        read(ev.dataTransfer.files);
         window.ondragleave(ev);
         dragCounter = 0;
     }
@@ -341,7 +345,7 @@ div{
 </head>
     <body id='wrapper'>
         <div>
-            <input id='fileSel' type="file" style="display:none" oninput='read()' multiple>
+            <input id='fileSel' type="file" style="display:none" onchange='read(this.files)' multiple>
             <button id='diffBtn' onclick='document.querySelector("#fileSel").click()'>Identify File(s)</button>
         </div>
         <div id='signatures' class='signaturesBlock'>

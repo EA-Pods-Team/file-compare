@@ -1,31 +1,21 @@
 <html>
     <head>
+        <script src="./md5.js" type="text/javascript"></script>
+<script src="./compromise.min.js"></script> 
 <script type="text/javascript">
-String.prototype.hashCode = function() {
-    var hash = 0, i, chr;
-    if (this.length === 0) return hash;
-    for (i = 0; i < this.length; i++) {
-      chr   = this.charCodeAt(i);
-      hash  = ((hash << 5) - hash) + chr;
-      //hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
-};
+
 function read(){
     var fileSel = document.querySelector('#fileSel');
     fileData = [];
     for (var i = 0; i < fileSel.files.length; i++){
-        console.log(fileSel.files[i])
+        
 
 
-        readFileAt(fileSel,i).then(function(data, file, ind){
-            console.log(file)
-            console.log(ind)
-            console.log(data.hashCode());
-            console.log(data);
-            fileData.unshift({
-                "file": file,
-                hash: data.hashCode()
+        readFileAt(fileSel,i).then(function(dict){
+            
+            fileData.push({
+                "file": dict.file,
+                hash: md5(dict.data)
             });
         });
     }
@@ -36,12 +26,48 @@ function readFileAt(fileSel, ind){
     return new Promise(function(resolve,reject){
         var reader = new FileReader();
         reader.onload = function(e){
-            console.log(e)
-            console.log(fileSel.files[ind])
-            resolve(e.target.result, fileSel.files[ind], ind);
+            resolve({
+                'data':e.target.result, 
+                'file': fileSel.files[ind]});
         }
         reader.readAsBinaryString(fileSel.files[ind])
     });
+}
+
+getWords = function(words, speech){
+    return Object.keys(words).filter(function(k){
+        var val = words[k];
+        if(Array.isArray(val)){
+            for (var type of val){
+                if(type == speech){
+                    return true;
+                }
+            } return false;
+        }else{
+            return words[k]==speech;
+        }
+    });
+}
+Array.prototype.getRand = function(md5seed){
+    return this[parseInt(md5seed,16) % this.length];
+}
+
+
+function makeSentence(seed){
+    return [names, verbs, numbers, adjs, adjs, nouns].map(function (arr){
+            return arr.getRand(seed += '1')
+        }).join(' ');
+}
+
+window.onload = function(){
+    allwords = nlp().world.words;
+    nouns = getWords(allwords, 'Plural')
+    numbers= getWords(allwords, 'Cardinal')
+    adjs = getWords(allwords, 'Adjective')
+    names = getWords(allwords,'FirstName')
+    verbs = getWords(allwords, 'PastTense')
+    adverbs = getWords(allwords, 'Adverb')
+    preps = getWords(allwords, "Preposition")
 }
 
 </script>

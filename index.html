@@ -6,23 +6,24 @@
 
 function read(){
     var fileSel = document.querySelector('#fileSel');
-    fileData = [];
-    for (var i = 0; i < fileSel.files.length; i++){
-        
 
+    readFile(fileSel,0).then(function(dict){
+        hash = md5(dict.data);
+        sent = makeSentence(hash);
+        //console.log(hash);
+        //console.log(sent);
+        console.log(dict.file)
+        document.querySelector('#md5').innerText = hash;
+        document.querySelector('#sentence').innerText = sent;
+        document.querySelector('#fname').innerText = dict.file.name;
+        document.querySelector('#lastMod').innerText = new Date(dict.file.lastModified);
+    }).then(function(){
+        fileSel.value = '';
+    });
 
-        readFileAt(fileSel,i).then(function(dict){
-            
-            fileData.push({
-                "file": dict.file,
-                hash: md5(dict.data)
-            });
-        });
-    }
-    
 }
 
-function readFileAt(fileSel, ind){
+function readFile(fileSel, ind){
     return new Promise(function(resolve,reject){
         var reader = new FileReader();
         reader.onload = function(e){
@@ -35,16 +36,19 @@ function readFileAt(fileSel, ind){
 }
 
 getWords = function(words, speech){
+    if(speech.constructor.name != 'RegExp'){
+        speech = RegExp("^" +speech +"$");
+    }
     return Object.keys(words).filter(function(k){
         var val = words[k];
         if(Array.isArray(val)){
             for (var type of val){
-                if(type == speech){
+                if(type.match(speech)){
                     return true;
                 }
             } return false;
         }else{
-            return words[k]==speech;
+            return ! (words[k].match(speech) == null);
         }
     });
 }
@@ -54,9 +58,9 @@ Array.prototype.getRand = function(md5seed){
 
 
 function makeSentence(seed){
-    return [names, verbs, numbers, adjs, adjs, nouns].map(function (arr){
-            return arr.getRand(seed += '1')
-        }).join(' ');
+    return ([names, verbs, numbers, adjs, adjs, nouns].map(function (arr){
+            return arr.getRand(seed += md5('1'))
+        }).join(' '));
 }
 
 window.onload = function(){
@@ -71,11 +75,25 @@ window.onload = function(){
 }
 
 </script>
-    </head>
+<style type="text/css">
+div{
+    margin:10px;
+}
+#sentence{
+    font-weight:bold;
+}
+</style>
+</head>
     <body>
         <div>
-            <input id='fileSel' type="file" multiple>
-            <button id='diffBtn' onclick='read()'>compare</button>
+            <input id='fileSel' type="file" style="display:none" oninput='read()'>
+            <button id='diffBtn' onclick='document.querySelector("#fileSel").click()'>Identify File</button>
+        </div>
+        <div id='signatures'>
+            <div>File Name: <span id='fname'></span></div>
+            <div>Last Modified: <span id='lastMod'></span></div>
+            <div>MD5 Hash: <span id='md5'></span></div> 
+            <div>Pseudo-Unique Sentence: <span id='sentence'></span></div>
         </div>
     </body>
 </html>

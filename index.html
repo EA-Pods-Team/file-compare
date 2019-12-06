@@ -242,16 +242,17 @@ function readFile(fileSel, ind){
 
 getWords = function(words, speech){
     if(speech.constructor.name != 'RegExp'){
-        speech = RegExp("^" +speech +"$");
+        speech = RegExp(speech);
     }
     return Object.keys(words).filter(function(k){
         var val = words[k];
         if(Array.isArray(val)){
-            for (var type of val){
-                if(type.match(speech)){
-                    return true;
-                }
-            } return false;
+            val = val.sort().join(" ");
+            if(val.match(speech)){
+                return true
+            }else{
+                return false
+            }
         }else{
             return ! (words[k].match(speech) == null);
         }
@@ -273,7 +274,7 @@ function makeSentence(seed){
 window.onload = function(){
     //allwords = nlp().world.words;
     allwords = getAllWords();
-    nouns = getWords(allwords, 'Plural')
+    nouns = getWords(allwords, /(?<!Demonym.*)Plural/); //this gets rid of nationalities and ethnicities
     numbers = getWords(allwords, 'Cardinal')
     adjs = getWords(allwords, 'Adjective')
     names = getWords(allwords,'FirstName')

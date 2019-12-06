@@ -72,6 +72,41 @@ window.onload = function(){
     verbs = getWords(allwords, 'PastTense')
     adverbs = getWords(allwords, 'Adverb')
     preps = getWords(allwords, "Preposition")
+
+    document.querySelector('#wrapper').ondragenter = function(ev){
+        ev.preventDefault();
+        document.querySelector('#wrapper').style.backgroundColor = "lightsteelblue";
+        
+        //console.log("DRAGGING")
+    }
+    document.querySelector('#wrapper').ondragleave = function(ev){
+        ev.preventDefault();
+        //console.log(ev)
+        document.querySelector('#wrapper').style.backgroundColor = "";
+        //console.log("LEAVING")
+    }
+
+    document.querySelector('#wrapper').ondrop = function(ev){
+        ev.preventDefault();
+        //console.log("DROPPED");
+        
+        document.querySelector('#fileSel').files = ev.dataTransfer.files;
+        read();
+        document.querySelector('#wrapper').ondragleave(ev);
+
+    }
+
+    var nothing = function(ev){
+        ev.preventDefault();
+        //console.log('nothing')
+    }
+    var nothing2 = function(ev){
+        ev.preventDefault();
+        console.log('nothing2')
+    }
+    document.querySelector('#wrapper').ondragover = nothing;
+    document.querySelector('#wrapper').ondragexit= nothing;
+    
 }
 
 </script>
@@ -84,7 +119,8 @@ div{
 }
 </style>
 </head>
-    <body>
+    <body id="wrapper">
+        <div id="">
         <div>
             <input id='fileSel' type="file" style="display:none" oninput='read()'>
             <button id='diffBtn' onclick='document.querySelector("#fileSel").click()'>Identify File</button>
@@ -94,6 +130,7 @@ div{
             <div>Last Modified: <span id='lastMod'></span></div>
             <div>MD5 Hash: <span id='md5'></span></div> 
             <div>Pseudo-Unique Sentence: <span id='sentence'></span></div>
+        </div>
         </div>
     </body>
 </html>

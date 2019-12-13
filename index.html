@@ -201,11 +201,16 @@ function read(files){
     for (var i = 0; i < files.length; i++){
         //
         readFile(files,i).then(function(dict){
-            hash = md5(dict.data);
-            sentence = makeSentence(hash);
-            //console.log(hash);
-            //console.log(sent);
             console.log(dict.file)
+            var hash = md5(dict.data);
+            var sentence = makeSentence(hash);
+            
+            var base64Str = btoa(dict.data);
+            var base64Blob = new Blob([base64Str], {
+              type:'text/plain'
+            })
+            var base64BlobLink = URL.createObjectURL(base64Blob);
+           
             var sigNode = document.querySelector('#signatureTemplate').cloneNode(true);
             
             sigNode.removeAttribute('id');
@@ -216,6 +221,31 @@ function read(files){
             sigNode.querySelector('.fname').innerText = dict.file.name;
             sigNode.querySelector('.lastMod').innerText = new Date(dict.file.lastModified);
             
+            var linkNode = document.createElement("a");
+            linkNode.href = base64BlobLink;
+            linkNode.innerText = 'link';
+            linkNode.download = dict.file.name + '.txt';
+            sigNode.querySelector('.base64').appendChild(linkNode);
+
+            if(dict.file.type == 'text/plain'){
+              //if the file type is text/plain, assume that it might be base64
+              var fileData = atob(dict.data);
+              var fileDataArray = new Array(fileData.length);
+              for(var i = 0; i < fileDataArray.length;i++){
+                fileDataArray[i] = fileData.charCodeAt(i);
+              }
+              var fileBlobLink = URL.createObjectURL(new Blob([new Uint8Array(fileDataArray)]),{
+                type:'application/octet-stream'
+              });
+              var fileLinkNode = document.createElement('a');
+              fileLinkNode.href = fileBlobLink;
+              fileLinkNode.innerText = 'link';
+              fileLinkNode.download = (dict.file.name).replace('\.txt','');
+              sigNode.querySelector('.base64Decoded').appendChild(fileLinkNode);
+            }else{
+              sigNode.querySelector('.base64Decoded').parentNode.style.display = 'none';
+            }
+
             document.querySelector('#signatures').appendChild(sigNode);
             return dict.file;
         }).then(function(file){
@@ -354,6 +384,8 @@ div{
                     <div>Last Modified: <span class='lastMod'></span></div>
                     <div>MD5 Hash: <span class='md5'></span></div> 
                     <div>Pseudo-Unique Sentence: <span class='sentence'></span></div>
+                    <div>File converted to Base64 .txt file: <span class='base64'></span></div>
+                    <div>Base64 .txt converted to File: <span class='base64Decoded'></span></div>
                 </div>
         </div>
     </body>
